@@ -1,0 +1,175 @@
+generator client {
+  provider     = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SPEAKER
+  OPERATOR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum DialectVariant {
+  TUNIS_CAPITAL
+}
+
+enum Style {
+  NEUTRAL
+  AD_HYPE
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  RECORDED
+  APPROVED
+  REJECTED
+}
+
+enum QAStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  FAILED
+  DONE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(SPEAKER)
+  createdAt    DateTime @default(now())
+  speaker      Speaker?
+}
+
+model Speaker {
+  id           String            @id @default(cuid())
+  userId       String?           @unique
+  user         User?             @relation(fields: [userId], references: [id])
+  displayName  String
+  gender       Gender
+  dialect      DialectVariant    @default(TUNIS_CAPITAL)
+  consentAt    DateTime?
+  createdAt    DateTime          @default(now())
+  assignments  Assignment[]
+  recordings   Recording[]
+  datasets     DatasetSnapshot[]
+  models       VoiceModel[]
+  trainingRuns TrainingRun[]
+}
+
+model Sentence {
+  id             String       @id @default(cuid())
+  textArabizi    String
+  textNormalized String?
+  tags           Json
+  createdAt      DateTime     @default(now())
+  assignments    Assignment[]
+  recordings     Recording[]
+}
+
+model Assignment {
+  id         String           @id @default(cuid())
+  speakerId  String
+  sentenceId String
+  status     AssignmentStatus @default(ASSIGNED)
+  batchId    String?
+  createdAt  DateTime         @default(now())
+  speaker    Speaker          @relation(fields: [speakerId], references: [id])
+  sentence   Sentence         @relation(fields: [sentenceId], references: [id])
+}
+
+model Recording {
+  id           String        @id @default(cuid())
+  speakerId    String
+  sentenceId   String
+  style        Style
+  qaStatus     QAStatus      @default(PENDING)
+  qaNotes      String?
+  s3Url        String
+  durationMs   Int?
+  sampleRate   Int?
+  clipFlag     Boolean       @default(false)
+  loudnessDb   Float?
+  createdAt    DateTime      @default(now())
+  speaker      Speaker       @relation(fields: [speakerId], references: [id])
+  sentence     Sentence      @relation(fields: [sentenceId], references: [id])
+  datasetItems DatasetItem[]
+}
+
+model DatasetSnapshot {
+  id        String        @id @default(cuid())
+  speakerId String?
+  name      String
+  status    String        @default("PENDING") // PENDING, COMPLETED, FAILED
+  createdAt DateTime      @default(now())
+  speaker   Speaker?      @relation(fields: [speakerId], references: [id])
+  items     DatasetItem[]
+  runs      TrainingRun[]
+}
+
+model DatasetItem {
+  snapshotId  String
+  recordingId String
+  snapshot    DatasetSnapshot @relation(fields: [snapshotId], references: [id])
+  recording   Recording       @relation(fields: [recordingId], references: [id])
+
+  @@id([snapshotId, recordingId])
+}
+
+model TrainingRun {
+  id          String          @id @default(cuid())
+  speakerId   String
+  snapshotId  String
+  status      RunStatus       @default(QUEUED)
+  baseModel   String?
+  logsUrl     String?
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  speaker     Speaker         @relation(fields: [speakerId], references: [id])
+  snapshot    DatasetSnapshot @relation(fields: [snapshotId], references: [id])
+  outputModel VoiceModel?
+}
+
+model VoiceModel {
+  id           String       @id @default(cuid())
+  speakerId    String
+  runId        String?      @unique
+  version      String
+  artifactUrl  String
+  configUrl    String?
+  isActive     Boolean      @default(false)
+  qualityScore Float?
+  createdAt    DateTime     @default(now())
+  speaker      Speaker      @relation(fields: [speakerId], references: [id])
+  run          TrainingRun? @relation(fields: [runId], references: [id])
+  generations  Generation[]
+}
+
+model Generation {
+  id             String     @id @default(cuid())
+  userId         String
+  voiceModelId   String
+  inputText      String
+  normalizedText String?
+  style          Style
+  outputUrl      String
+  latencyMs      Int?
+  createdAt      DateTime   @default(now())
+  voiceModel     VoiceModel @relation(fields: [voiceModelId], references: [id])
+}

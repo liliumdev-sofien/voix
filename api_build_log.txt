@@ -1,0 +1,18 @@
+
+> api@0.0.1 build C:\Users\liliu\Desktop\projet\Voix\apps\api
+> nest build
+
+[96mprisma/seed.ts[0m:[93m2[0m:[93m25[0m - [91merror[0m[90m TS2307: [0mCannot find module 'bcrypt' or its corresponding type declarations.
+
+[7m2[0m import * as bcrypt from 'bcrypt';
+[7m [0m [91m                        ~~~~~~~~[0m
+[96msrc/auth/auth.module.ts[0m:[93m3[0m:[93m27[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/jwt' or its corresponding type declarations.
+
+[7m3[0m import { JwtModule } from '@nestjs/jwt';
+[7m [0m [91m                          ~~~~~~~~~~~~~[0m
+
+Found 2 error(s).
+
+C:\Users\liliu\Desktop\projet\Voix\apps\api:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  api@0.0.1 build: `nest build`
+Exit status 1
