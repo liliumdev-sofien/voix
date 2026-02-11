@@ -1,0 +1,57 @@
+# F5-TTS Training Configuration for CPU Sanity Check
+# Optimized for Intel i5-11500H with 32GB RAM
+
+# Model Configuration
+model:
+  type: "f5-tts"
+  dim: 512  # Reduced from 1024 for CPU
+  depth: 8  # Reduced from default for faster training
+  heads: 8
+  ff_mult: 2
+  text_dim: 512
+  conv_layers: 4
+
+# Training Configuration
+training:
+  batch_size: 1  # Minimal batch size for sanity check
+  gradient_accumulation_steps: 4  # Simulate batch_size=4
+  num_train_epochs: 1  # Just one epoch for sanity check
+  max_steps: 10  # Stop after 10 steps for quick verification
+  
+  learning_rate: 1e-4
+  warmup_steps: 2
+  
+  # Memory optimization for CPU
+  gradient_checkpointing: true
+  fp16: false  # CPU doesn't support fp16
+  
+  # Logging
+  logging_steps: 1
+  save_steps: 5
+  eval_steps: 5
+  
+  # Output
+  output_dir: "./outputs/tounsi_sanity_check"
+  save_total_limit: 2
+
+# Dataset Configuration  
+dataset:
+  data_path: "./tounsi_dataset/metadata.jsonl"
+  audio_dir: "./tounsi_dataset/audio"
+  sample_rate: 24000
+  max_duration: 30  # seconds
+  min_duration: 1
+  
+  # Text processing
+  text_cleaner: "basic"  # Use basic cleaner for Arabizi
+  
+# DataLoader Configuration
+dataloader:
+  num_workers: 2  # Limited for CPU
+  pin_memory: false  # Not needed for CPU
+  prefetch_factor: 2
+
+# Optimization for 32GB RAM
+system:
+  max_memory_gb: 28  # Leave some headroom
+  num_threads: 6  # For i5-11500H (6 cores)
